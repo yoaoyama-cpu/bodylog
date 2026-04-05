@@ -409,6 +409,8 @@ let isTrip = false;
 let alarmOn = localStorage.getItem('bodylog_alarm') === 'true';
 let alarmTimer = null;
 
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+
 function toggleExerciseOther(val) {
   document.getElementById('exerciseOtherRow').style.display = val === 'other' ? 'flex' : 'none';
 }
@@ -592,7 +594,7 @@ async function analyzeMealSlot(slot) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 120,
         messages: [{ role: 'user', content: `食事のカロリーをJSON形式のみで返してください。他の文字は不要。\n入力：「${input}」\n形式：{"name":"食事名(12文字以内)","kcal":数値}\n日本の標準的な量で推定。数値のみ（単位なし）。` }]
       })
@@ -659,7 +661,7 @@ async function getAIFeedback(today, all) {
   const res = await fetch('/.netlify/functions/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role:'user', content: prompt }] })
+    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1000, messages: [{ role:'user', content: prompt }] })
   });
   const data = await res.json();
   return data.content?.[0]?.text || 'フィードバックを取得できませんでした。';
