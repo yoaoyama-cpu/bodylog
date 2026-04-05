@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BODY LOG — 70kg PROJECT</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #2a2a2a;
+    --accent: #e8ff00;
+    --accent2: #ff4444;
+    --accent3: #00d4ff;
+    --text: #f0f0f0;
+    --muted: #666;
+    --ok: #44ff88;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .logo { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; color: var(--accent); }
+  .alarm-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .alarm-btn.active { border-color: var(--accent3); color: var(--accent3); }
+
+  .progress-banner { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; }
+  .progress-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .progress-label { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; font-family: 'Space Mono', monospace; }
+  .progress-numbers { font-family: 'Space Mono', monospace; font-size: 11px; }
+  .progress-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 3px; transition: width 1s ease; }
+
+  main { max-width: 520px; margin: 0 auto; padding: 20px 14px 80px; }
+
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+  .tab { padding: 11px 8px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; background: var(--surface); border: none; color: var(--muted); transition: all 0.2s; }
+  .tab.active { background: var(--accent); color: #000; }
+  .tab:not(:last-child) { border-right: 1px solid var(--border); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-title { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .input-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .input-row:last-child { margin-bottom: 0; }
+  .input-label { font-size: 11px; color: var(--muted); width: 72px; flex-shrink: 0; }
+
+  input[type="number"], input[type="text"], textarea, select {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+    padding: 9px 11px; font-family: 'Space Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { font-family: 'Noto Sans JP', sans-serif; font-size: 13px; resize: none; height: 72px; }
+  select option { background: var(--bg); }
+
+  .weight-display { font-family: 'Space Mono', monospace; font-size: 44px; font-weight: 700; color: var(--accent); text-align: center; padding: 12px 0 4px; line-height: 1; }
+  .weight-display span { font-size: 16px; color: var(--muted); margin-left: 3px; }
+  .weight-diff { text-align: center; font-family: 'Space Mono', monospace; font-size: 12px; margin-bottom: 14px; }
+
+  .calorie-meter { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  .calorie-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .calorie-total { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; }
+  .calorie-total.over { color: var(--accent2); }
+  .calorie-total.warn { color: var(--accent); }
+  .calorie-total.ok { color: var(--ok); }
+  .calorie-limit { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
+  .calorie-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+  .calorie-fill { height: 100%; border-radius: 4px; transition: width 0.5s, background 0.5s; }
+  .calorie-breakdown { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; min-height: 26px; }
+  .meal-slot-bar { display: flex; gap: 4px; margin-top: 4px; }
+  .meal-slot-bar-item { flex: 1; text-align: center; font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); padding-top: 3px; }
+  .meal-slot-bar-item span { display: block; font-size: 11px; color: var(--accent3); }
+
+  .meal-slots { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .meal-slot { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .meal-slot-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .meal-slot-icon { font-size: 14px; flex-shrink: 0; }
+  .meal-slot-label { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; flex-shrink: 0; }
+  .meal-slot-kcal { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--accent3); margin-left: auto; }
+  .meal-slot-saved { font-size: 10px; color: var(--ok); flex-shrink: 0; margin-left: 6px; }
+  .meal-slot-tags { display: flex; gap: 5px; flex-wrap: wrap; min-height: 22px; margin-bottom: 8px; }
+  .cal-meal-tag { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; font-size: 11px; display: flex; align-items: center; gap: 5px; }
+  .cal-meal-tag .cal-num { font-family: 'Space Mono', monospace; color: var(--accent3); }
+  .cal-meal-tag button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+  .cal-meal-tag button:hover { color: var(--accent2); }
+  .meal-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .meal-input-row input { flex: 1; }
+  .btn-analyze { background: var(--accent3); color: #000; border: none; border-radius: 6px; padding: 0 12px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; flex-shrink: 0; }
+  .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-slot-save { width: 100%; padding: 7px; background: none; border: 1px dashed var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; font-family: 'Space Mono', monospace; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; }
+  .btn-slot-save:hover { border-color: var(--ok); color: var(--ok); }
+  .btn-slot-save.saved { border-color: var(--ok); color: var(--ok); border-style: solid; }
+
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .toggle-label { font-size: 12px; color: var(--muted); }
+  .toggle { width: 40px; height: 22px; background: var(--border); border-radius: 11px; cursor: pointer; position: relative; transition: background 0.2s; border: none; flex-shrink: 0; }
+  .toggle.on { background: var(--accent2); }
+  .toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: white; border-radius: 8px; top: 3px; left: 3px; transition: left 0.2s; }
+  .toggle.on::after { left: 21px; }
+
+  .trip-warning { background: rgba(255,68,68,0.1); border: 1px solid var(--accent2); border-radius: 6px; padding: 9px 12px; font-size: 12px; color: var(--accent2); margin-bottom: 14px; display: none; line-height: 1.6; }
+  .trip-warning.visible { display: block; }
+
+  .btn-primary { width: 100%; padding: 13px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 12px; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.2s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .feedback-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; position: relative; overflow: hidden; }
+  .feedback-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--accent2); }
+  .feedback-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .feedback-badge { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.2em; background: var(--accent2); color: #000; padding: 3px 7px; border-radius: 3px; font-weight: 700; }
+  .feedback-date { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+  .feedback-text { font-size: 13px; line-height: 1.8; color: var(--text); }
+
+  .loading-dots { display: flex; gap: 6px; padding: 6px 0; }
+  .loading-dots span { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; animation: bounce 1s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0);opacity:0.4} 50%{transform:translateY(-5px);opacity:1} }
+
+  .graph-container { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  canvas { width: 100%; height: 200px; display: block; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Space Mono', monospace; margin-bottom: 6px; }
+  .stat-value { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; }
+  .stat-value.good { color: var(--ok); }
+  .stat-value.warn { color: var(--accent); }
+  .stat-value.bad { color: var(--accent2); }
+
+  .log-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .log-date { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); width: 58px; flex-shrink: 0; line-height: 1.4; }
+  .log-weight { font-family: 'Space Mono', monospace; font-size: 17px; font-weight: 700; color: var(--accent); width: 54px; flex-shrink: 0; }
+  .log-details { flex: 1; font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .log-kcal { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent3); flex-shrink: 0; text-align: right; }
+  .log-trip { font-size: 9px; background: rgba(255,68,68,0.15); color: var(--accent2); padding: 2px 6px; border-radius: 3px; font-family: 'Space Mono', monospace; }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 13px; line-height: 2; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: #000; padding: 11px 22px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; transition: transform 0.3s ease; z-index: 999; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 320px; max-width: 90vw; }
+  .modal h3 { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--accent); margin-bottom: 14px; letter-spacing: 0.1em; }
+  .modal p { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+  .modal-note { font-size: 11px; color: var(--accent2); background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; line-height: 1.7; }
+  .modal-status { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--accent3); margin-bottom: 16px; min-height: 18px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns button { flex: 1; padding: 11px; border-radius: 7px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; cursor: pointer; border: none; }
+  .btn-cancel { background: var(--border); color: var(--muted); }
+  .btn-set { background: var(--accent3); color: #000; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">BODY LOG</div>
+  <button class="alarm-btn" id="alarmBtn" onclick="openAlarmModal()">
+    <span>🔔</span><span id="alarmBtnText">23:00通知</span>
+  </button>
+</header>
+
+<div class="progress-banner">
+  <div class="progress-meta">
+    <span class="progress-label">進捗</span>
+    <span class="progress-numbers" id="progressText">開始前</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('today')">TODAY</button>
+    <button class="tab" onclick="showTab('graph')">GRAPH</button>
+    <button class="tab" onclick="showTab('log')">LOG</button>
+  </div>
+
+  <!-- TODAY -->
+  <div class="panel active" id="panel-today">
+
+    <div class="section-title">体重</div>
+    <div class="input-card">
+      <div class="weight-display" id="weightDisplay">—<span>kg</span></div>
+      <div class="weight-diff" id="weightDiff"></div>
+      <div class="input-row">
+        <label class="input-label">今日の体重</label>
+        <input type="number" id="weightInput" step="0.1" min="50" max="150" placeholder="79.5" oninput="updateWeightDisplay(this.value)">
+      </div>
+    </div>
+
+    <div class="section-title">カロリー管理</div>
+    <div class="calorie-meter">
+      <div class="calorie-header">
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:2px">TODAY TOTAL</div>
+          <div class="calorie-total ok" id="calTotal">0</div>
+        </div>
+        <div style="text-align:right">
+          <div class="calorie-limit">目標 1,900 kcal</div>
+          <div id="calRemain" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ok)">残り 1,900</div>
+        </div>
+      </div>
+      <div class="calorie-track">
+        <div class="calorie-fill" id="calFill" style="width:0%;background:var(--ok)"></div>
+      </div>
+      <!-- meal slot summary bar -->
+      <div class="meal-slot-bar" id="mealSlotBar"></div>
+    </div>
+
+    <!-- 4 meal slots -->
+    <div class="meal-slots">
+      <div class="meal-slot" id="slot-breakfast">
+        <div class="meal-slot-header">
+          <span class="meal-slot-icon">🌅</span>
+          <span class="meal-slot-label">朝食</span>
+          <span class="meal-slot-kcal" id="kcal-breakfast">—</span>
+          <span class="meal-slot-saved" id="saved-breakfast"></span>
+        </div>
+        <div class="meal-slot-tags" id="tags-breakfast"></div>
+        <div class="meal-input-row">
+          <input type="text" id="input-breakfast" placeholder="例：トースト、ゆで卵、コーヒー" onkeydown="if(event.key==='Enter')analyzeMealSlot('breakfast')">
+          <button class="btn-analyze" id="btn-breakfast" onclick="analyzeMealSlot('breakfast')">AI推定</button>
+        </div>
+        <button class="btn-slot-save" id="save-breakfast" onclick="saveMealSlot('breakfast')">この内容で一時保存</button>
+      </div>
+
+      <div class="meal-slot" id="slot-lunch">
+        <div class="meal-slot-header">
+          <span class="meal-slot-icon">☀️</span>
+          <span class="meal-slot-label">昼食</span>
+          <span class="meal-slot-kcal" id="kcal-lunch">—</span>
+          <span class="meal-slot-saved" id="saved-lunch"></span>
+        </div>
+        <div class="meal-slot-tags" id="tags-lunch"></div>
+        <div class="meal-input-row">
+          <input type="text" id="input-lunch" placeholder="例：蕎麦大盛り、おにぎり" onkeydown="if(event.key==='Enter')analyzeMealSlot('lunch')">
+          <button class="btn-analyze" id="btn-lunch" onclick="analyzeMealSlot('lunch')">AI推定</button>
+        </div>
+        <button class="btn-slot-save" id="save-lunch" onclick="saveMealSlot('lunch')">この内容で一時保存</button>
+      </div>
+
+      <div class="meal-slot" id="slot-dinner">
+        <div class="meal-slot-header">
+          <span class="meal-slot-icon">🌙</span>
+          <span class="meal-slot-label">夕食</span>
+          <span class="meal-slot-kcal" id="kcal-dinner">—</span>
+          <span class="meal-slot-saved" id="saved-dinner"></span>
+        </div>
+        <div class="meal-slot-tags" id="tags-dinner"></div>
+        <div class="meal-input-row">
+          <input type="text" id="input-dinner" placeholder="例：鶏肉定食、ご飯半膳、味噌汁" onkeydown="if(event.key==='Enter')analyzeMealSlot('dinner')">
+          <button class="btn-analyze" id="btn-dinner" onclick="analyzeMealSlot('dinner')">AI推定</button>
+        </div>
+        <button class="btn-slot-save" id="save-dinner" onclick="saveMealSlot('dinner')">この内容で一時保存</button>
+      </div>
+
+      <div class="meal-slot" id="slot-other">
+        <div class="meal-slot-header">
+          <span class="meal-slot-icon">🍵</span>
+          <span class="meal-slot-label">その他</span>
+          <span class="meal-slot-kcal" id="kcal-other">—</span>
+          <span class="meal-slot-saved" id="saved-other"></span>
+        </div>
+        <div class="meal-slot-tags" id="tags-other"></div>
+        <div class="meal-input-row">
+          <input type="text" id="input-other" placeholder="例：間食、ビール2杯、飴など" onkeydown="if(event.key==='Enter')analyzeMealSlot('other')">
+          <button class="btn-analyze" id="btn-other" onclick="analyzeMealSlot('other')">AI推定</button>
+        </div>
+        <button class="btn-slot-save" id="save-other" onclick="saveMealSlot('other')">この内容で一時保存</button>
+      </div>
+    </div>
+
+    <div class="section-title">コンディション</div>
+    <div class="input-card">
+      <div class="toggle-row">
+        <button class="toggle" id="tripToggle" onclick="toggleTrip()"></button>
+        <span class="toggle-label">本日は出張</span>
+      </div>
+      <div class="trip-warning" id="tripWarning">
+        ⚠️ 出張ルール：夜の酒はビール2杯まで。締めはスキップ。<br>
+        ホテル朝食は野菜→卵→炭水化物の順で。
+      </div>
+      <div class="input-row">
+        <label class="input-label">運動</label>
+        <select id="exerciseSelect" onchange="toggleExerciseOther(this.value)">
+          <option value="none">なし</option>
+          <option value="aikido">合気道</option>
+          <option value="walk">早歩き30分</option>
+          <option value="strength">筋トレ10分</option>
+          <option value="other">その他（自由記述）</option>
+        </select>
+      </div>
+      <div class="input-row" id="exerciseOtherRow" style="display:none">
+        <label class="input-label">内容</label>
+        <input type="text" id="exerciseOtherText" placeholder="例：サイクリング30分、水泳など">
+      </div>
+      <div class="input-row">
+        <label class="input-label">飲酒</label>
+        <select id="alcoholSelect">
+          <option value="none">なし</option>
+          <option value="ok">1〜2杯（適量）</option>
+          <option value="warn">3〜4杯</option>
+          <option value="over">5杯以上</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="saveBtn" onclick="saveToday()">記録してAIフィードバックを受ける</button>
+
+    <div style="margin-top:20px">
+      <div class="section-title">AIフィードバック</div>
+      <div class="feedback-card">
+        <div class="feedback-header">
+          <span class="feedback-badge">AI COACH</span>
+          <span class="feedback-date" id="feedbackDate">—</span>
+        </div>
+        <div class="feedback-text" id="feedbackText" style="color:var(--muted);font-size:12px">記録を保存するとフィードバックが届きます。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAPH -->
+  <div class="panel" id="panel-graph">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">現在体重</div><div class="stat-value warn" id="statCurrent">—</div></div>
+      <div class="stat-card"><div class="stat-label">目標まで</div><div class="stat-value bad" id="statRemain">—</div></div>
+      <div class="stat-card"><div class="stat-label">先週比</div><div class="stat-value" id="statWeekly">—</div></div>
+      <div class="stat-card"><div class="stat-label">平均kcal/日</div><div class="stat-value warn" id="statAvgCal">—</div></div>
+    </div>
+    <div class="graph-container">
+      <div class="section-title">体重推移</div>
+      <canvas id="weightChart"></canvas>
+    </div>
+    <div class="graph-container">
+      <div class="section-title">カロリー推移</div>
+      <canvas id="calChart"></canvas>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="panel" id="panel-log">
+    <div id="logList"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- ALARM MODAL -->
+<div class="modal-overlay" id="alarmModal">
+  <div class="modal">
+    <h3>🔔 23:00 記録リマインダー</h3>
+    <p>毎晩23時にアラーム音＋通知でお知らせします。<br>このページを開いている間だけ動作します。</p>
+    <div class="modal-note">
+      HTMLファイル単体のため、バックグラウンドでのOS通知は送れません。スマホのホーム画面に追加してブラウザで開いたままにするのがおすすめです。
+    </div>
+    <div class="modal-status" id="alarmStatus"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAlarmModal()">閉じる</button>
+      <button class="btn-set" id="alarmToggleBtn" onclick="toggleAlarm()">アラームON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const START_WEIGHT = 80;
+const GOAL_WEIGHT = 70;
+const CALORIE_TARGET = 1900;
+const STORAGE_KEY = 'bodylog_v2';
+
+let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let isTrip = false;
+let alarmOn = localStorage.getItem('bodylog_alarm') === 'true';
+let alarmTimer = null;
+
+function toggleExerciseOther(val) {
+  document.getElementById('exerciseOtherRow').style.display = val === 'other' ? 'flex' : 'none';
+}
+
+
+// ---- ALARM ----
+function updateAlarmUI() {
+  document.getElementById('alarmBtn').classList.toggle('active', alarmOn);
+  document.getElementById('alarmBtnText').textContent = alarmOn ? '23:00 ON' : '23:00通知';
+  document.getElementById('alarmToggleBtn').textContent = alarmOn ? 'アラームOFF' : 'アラームON';
+  document.getElementById('alarmStatus').textContent = alarmOn ? '✓ 設定中 — このページを開いている間、毎晩23:00に鳴ります' : '';
+}
+
+function openAlarmModal() { document.getElementById('alarmModal').classList.add('visible'); updateAlarmUI(); }
+function closeAlarmModal() { document.getElementById('alarmModal').classList.remove('visible'); }
+
+function toggleAlarm() {
+  alarmOn = !alarmOn;
+  localStorage.setItem('bodylog_alarm', alarmOn);
+  updateAlarmUI();
+  if (alarmOn) {
+    scheduleAlarm();
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  } else {
+    clearTimeout(alarmTimer);
+  }
+}
+
+function scheduleAlarm() {
+  if (!alarmOn) return;
+  clearTimeout(alarmTimer);
+  const now = new Date();
+  const target = new Date();
+  target.setHours(23, 0, 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  alarmTimer = setTimeout(() => { triggerAlarm(); scheduleAlarm(); }, target - now);
+}
+
+function triggerAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 350, 700].forEach(d => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.25, ctx.currentTime + d/1000);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d/1000 + 0.5);
+      o.start(ctx.currentTime + d/1000);
+      o.stop(ctx.currentTime + d/1000 + 0.5);
+    });
+  } catch(e) {}
+  showToast('⏰ 23:00 — 今日の記録をしましょう！');
+  if (Notification.permission === 'granted') new Notification('BODY LOG', { body: '今日の体重・カロリーを記録しましょう。' });
+}
+
+// ---- TABS ----
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['today','graph','log'][i] === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'graph') renderGraphs();
+  if (name === 'log') renderLog();
+}
+
+function toggleTrip() {
+  isTrip = !isTrip;
+  document.getElementById('tripToggle').classList.toggle('on', isTrip);
+  document.getElementById('tripWarning').classList.toggle('visible', isTrip);
+}
+
+// ---- WEIGHT ----
+function updateWeightDisplay(v) {
+  const w = parseFloat(v);
+  if (isNaN(w)) { document.getElementById('weightDisplay').innerHTML = '—<span>kg</span>'; return; }
+  document.getElementById('weightDisplay').innerHTML = w.toFixed(1) + '<span>kg</span>';
+  const last = records.length ? records[records.length-1].weight : START_WEIGHT;
+  const diff = w - last;
+  const el = document.getElementById('weightDiff');
+  el.textContent = diff === 0 ? '±0.0kg' : (diff > 0 ? '+' : '') + diff.toFixed(1) + 'kg';
+  el.style.color = diff > 0 ? 'var(--accent2)' : diff < 0 ? 'var(--ok)' : 'var(--muted)';
+  updateProgress(w);
+}
+
+function updateProgress(w) {
+  const pct = Math.min(100, Math.max(0, (START_WEIGHT - w) / (START_WEIGHT - GOAL_WEIGHT) * 100));
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${w.toFixed(1)}kg → 70kg（残り${Math.max(0,w-GOAL_WEIGHT).toFixed(1)}kg）`;
+}
+
+// ---- CALORIE SLOTS ----
+// mealSlots: { breakfast: [{name,kcal}], lunch: [...], dinner: [...], other: [...] }
+// savedSlots: which slots are "saved" for today
+const SLOT_KEYS = ['breakfast','lunch','dinner','other'];
+let mealSlots = { breakfast:[], lunch:[], dinner:[], other:[] };
+let savedSlots = new Set();
+
+function slotTotal(slot) { return mealSlots[slot].reduce((s,m)=>s+m.kcal,0); }
+function totalKcal() { return SLOT_KEYS.reduce((s,k)=>s+slotTotal(k),0); }
+
+function updateCalDisplay() {
+  const total = totalKcal();
+  const remain = CALORIE_TARGET - total;
+  const pct = Math.min(100, total / CALORIE_TARGET * 100);
+
+  const el = document.getElementById('calTotal');
+  el.textContent = total.toLocaleString();
+  el.className = 'calorie-total ' + (total > CALORIE_TARGET ? 'over' : total > CALORIE_TARGET*0.85 ? 'warn' : 'ok');
+
+  const remEl = document.getElementById('calRemain');
+  remEl.textContent = remain >= 0 ? `残り ${remain.toLocaleString()}` : `超過 ${Math.abs(remain).toLocaleString()}`;
+  remEl.style.color = remain >= 0 ? 'var(--ok)' : 'var(--accent2)';
+
+  const fill = document.getElementById('calFill');
+  fill.style.width = pct + '%';
+  fill.style.background = total > CALORIE_TARGET ? 'var(--accent2)' : total > CALORIE_TARGET*0.85 ? 'var(--accent)' : 'var(--ok)';
+
+  // Summary bar
+  const slotLabels = { breakfast:'朝', lunch:'昼', dinner:'夜', other:'他' };
+  document.getElementById('mealSlotBar').innerHTML = SLOT_KEYS.map(k => {
+    const kcal = slotTotal(k);
+    return `<div class="meal-slot-bar-item">${slotLabels[k]}<span>${kcal > 0 ? kcal : '—'}</span></div>`;
+  }).join('');
+
+  // Per-slot display
+  SLOT_KEYS.forEach(k => {
+    const kc = slotTotal(k);
+    document.getElementById('kcal-'+k).textContent = kc > 0 ? kc.toLocaleString()+' kcal' : '—';
+    const tagsEl = document.getElementById('tags-'+k);
+    tagsEl.innerHTML = mealSlots[k].map((m,i) =>
+      `<div class="cal-meal-tag"><span>${m.name}</span><span class="cal-num">${m.kcal}</span><button onclick="removeMealItem('${k}',${i})">×</button></div>`
+    ).join('');
+    const savedEl = document.getElementById('saved-'+k);
+    savedEl.textContent = savedSlots.has(k) ? '✓ 保存済' : '';
+    const saveBtn = document.getElementById('save-'+k);
+    saveBtn.classList.toggle('saved', savedSlots.has(k));
+    saveBtn.textContent = savedSlots.has(k) ? '✓ 保存済み（再保存する）' : 'この内容で一時保存';
+  });
+}
+
+function removeMealItem(slot, i) {
+  mealSlots[slot].splice(i,1);
+  savedSlots.delete(slot); // unsave if edited
+  persistDraft();
+  updateCalDisplay();
+}
+
+function saveMealSlot(slot) {
+  if (mealSlots[slot].length === 0) { showToast('食事を追加してから保存してください'); return; }
+  savedSlots.add(slot);
+  persistDraft();
+  updateCalDisplay();
+  showToast('一時保存しました');
+}
+
+function persistDraft() {
+  const today = new Date().toLocaleDateString('ja-JP');
+  localStorage.setItem('bodylog_draft', JSON.stringify({ date: today, mealSlots, savedSlots: [...savedSlots] }));
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem('bodylog_draft');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    const today = new Date().toLocaleDateString('ja-JP');
+    if (d.date !== today) { localStorage.removeItem('bodylog_draft'); return; } // stale
+    mealSlots = d.mealSlots || { breakfast:[], lunch:[], dinner:[], other:[] };
+    savedSlots = new Set(d.savedSlots || []);
+    updateCalDisplay();
+  } catch(e) {}
+}
+
+async function analyzeMealSlot(slot) {
+  const inputEl = document.getElementById('input-'+slot);
+  const input = inputEl.value.trim();
+  if (!input) return;
+  const btn = document.getElementById('btn-'+slot);
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 120,
+        messages: [{ role: 'user', content: `食事のカロリーをJSON形式のみで返してください。他の文字は不要。\n入力：「${input}」\n形式：{"name":"食事名(12文字以内)","kcal":数値}\n日本の標準的な量で推定。数値のみ（単位なし）。` }]
+      })
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.content?.[0]?.text?.replace(/```json|```/g,'').trim() || '{}');
+    if (parsed.name && typeof parsed.kcal === 'number') {
+      mealSlots[slot].push({ name: parsed.name, kcal: Math.round(parsed.kcal) });
+      inputEl.value = '';
+      persistDraft();
+      updateCalDisplay();
+    }
+  } catch(e) { showToast('カロリー推定に失敗しました'); }
+  btn.disabled = false; btn.textContent = 'AI推定';
+}
+
+// ---- SAVE ----
+async function saveToday() {
+  const w = parseFloat(document.getElementById('weightInput').value);
+  if (isNaN(w) || w < 50 || w > 150) { showToast('体重を正しく入力してください'); return; }
+  const today = new Date().toLocaleDateString('ja-JP');
+  const exerciseVal = document.getElementById('exerciseSelect').value;
+  const exerciseText = exerciseVal === 'other'
+    ? (document.getElementById('exerciseOtherText').value.trim() || 'その他')
+    : exerciseVal;
+  const record = {
+    date: today, weight: w, trip: isTrip,
+    exercise: exerciseVal,
+    exerciseLabel: exerciseText,
+    alcohol: document.getElementById('alcoholSelect').value,
+    mealSlots: JSON.parse(JSON.stringify(mealSlots)),
+    meals: SLOT_KEYS.flatMap(k => mealSlots[k]),
+    kcal: totalKcal(),
+    ts: Date.now()
+  };
+  records = records.filter(r => r.date !== today);
+  records.push(record); records.sort((a,b)=>a.ts-b.ts);
+  save(); updateProgress(w); showToast('記録しました');
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'AI分析中...';
+  document.getElementById('feedbackText').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    document.getElementById('feedbackText').textContent = await getAIFeedback(record, records);
+    document.getElementById('feedbackDate').textContent = today;
+  } catch(e) {
+    document.getElementById('feedbackText').textContent = 'フィードバックの取得に失敗しました。';
+  }
+  btn.disabled = false; btn.textContent = '記録してAIフィードバックを受ける';
+}
+
+async function getAIFeedback(today, all) {
+  const exLabel = today.exerciseLabel || (exMap[today.exercise] || today.exercise);
+  const alMap = { none:'飲まなかった', ok:'適量(1-2杯)', warn:'多め(3-4杯)', over:'飲みすぎ(5杯以上)' };
+  const recentAvgKcal = all.slice(-7).filter(r=>r.kcal>0).reduce((s,r,_,a)=>s+r.kcal/a.length,0);
+  const mealSummary = today.meals?.map(m=>`${m.name}(${m.kcal}kcal)`).join('、') || 'なし';
+  const prompt = `あなたは厳しいダイエットコーチです。容赦なく、でも的確に。言い訳は聞かない。
+ユーザー：34歳男性、172cm、目標：80kg→70kgを3ヶ月で達成。週2日出張。週1合気道。目標摂取カロリー1900kcal/日。
+
+【本日】体重:${today.weight}kg(残り${(today.weight-GOAL_WEIGHT).toFixed(1)}kg) / カロリー:${today.kcal||'未記録'}kcal / 食事:${mealSummary} / 出張:${today.trip?'YES':'NO'} / 運動:${exLabel} / 飲酒:${alMap[today.alcohol]}
+【累計】${all.length}日目 / 開始から${(( all[0]?.weight||START_WEIGHT)-today.weight).toFixed(1)}kg変化 / 直近kcal平均:${recentAvgKcal>0?Math.round(recentAvgKcal)+'kcal':'データなし'} / 飲みすぎ日数:${all.filter(r=>r.alcohol==='over').length}日
+
+3〜5文でコーチング。カロリーオーバーは明確に指摘。達成ペース遅ければ数字で示す。改善アクション1つ。敬語で。`;
+  const res = await fetch('/.netlify/functions/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role:'user', content: prompt }] })
+  });
+  const data = await res.json();
+  return data.content?.[0]?.text || 'フィードバックを取得できませんでした。';
+}
+
+// ---- GRAPHS ----
+function renderGraphs() {
+  if (records.length > 0) {
+    const latest = records[records.length-1].weight;
+    const weekAgo = records.length>=7 ? records[records.length-7].weight : records[0].weight;
+    const wd = (latest-weekAgo).toFixed(1);
+    const calRecs = records.filter(r=>r.kcal>0);
+    const avgCal = calRecs.length ? Math.round(calRecs.reduce((s,r)=>s+r.kcal,0)/calRecs.length) : 0;
+    document.getElementById('statCurrent').textContent = latest.toFixed(1)+'kg';
+    document.getElementById('statRemain').textContent = Math.max(0,latest-GOAL_WEIGHT).toFixed(1)+'kg';
+    document.getElementById('statWeekly').textContent = (wd>0?'+':'')+wd+'kg';
+    document.getElementById('statWeekly').className = 'stat-value '+(wd<=0?'good':'bad');
+    document.getElementById('statAvgCal').textContent = avgCal||'—';
+    document.getElementById('statAvgCal').className = 'stat-value '+(avgCal===0?'warn':avgCal<=CALORIE_TARGET?'good':'bad');
+  }
+  drawChart('weightChart', records.map(r=>({v:r.weight,trip:r.trip})), GOAL_WEIGHT, '#e8ff00', '70kg');
+  drawChart('calChart', records.filter(r=>r.kcal>0).map(r=>({v:r.kcal,trip:r.trip})), CALORIE_TARGET, '#00d4ff', '1900');
+}
+
+function drawChart(id, pts, goal, color, goalLabel) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr; canvas.height = 200 * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = 200;
+  ctx.clearRect(0,0,W,H);
+  if (pts.length < 2) {
+    ctx.fillStyle='#555'; ctx.font='12px Noto Sans JP'; ctx.textAlign='center';
+    ctx.fillText('2件以上の記録でグラフ表示', W/2, H/2); return;
+  }
+  const pad={top:18,right:16,bottom:26,left:44};
+  const gW=W-pad.left-pad.right, gH=H-pad.top-pad.bottom;
+  const vals=pts.map(p=>p.v);
+  const minV=Math.min(...vals,goal)*0.97, maxV=Math.max(...vals,goal)*1.03;
+  const xS=i=>pad.left+(i/(pts.length-1))*gW;
+  const yS=v=>pad.top+(1-(v-minV)/(maxV-minV))*gH;
+
+  // Goal
+  ctx.strokeStyle=color+'44'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(pad.left,yS(goal)); ctx.lineTo(pad.left+gW,yS(goal)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=color+'88'; ctx.font='8px Space Mono'; ctx.textAlign='left';
+  ctx.fillText(goalLabel, pad.left+2, yS(goal)-4);
+
+  // Line
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(xS(i),yS(p.v)):ctx.lineTo(xS(i),yS(p.v)));
+  ctx.stroke();
+
+  // Dots
+  pts.forEach((p,i)=>{
+    ctx.beginPath(); ctx.arc(xS(i),yS(p.v),3.5,0,Math.PI*2);
+    ctx.fillStyle=p.trip?'#ff4444':color; ctx.fill();
+  });
+
+  // Y labels
+  ctx.fillStyle='#555'; ctx.font='9px Space Mono'; ctx.textAlign='right';
+  [0,0.5,1].forEach(t=>{
+    const v=minV+(maxV-minV)*t;
+    ctx.fillText(Math.round(v), pad.left-4, yS(v)+3);
+  });
+}
+
+// ---- LOG ----
+function renderLog() {
+  const el = document.getElementById('logList');
+  if (!records.length) { el.innerHTML='<div class="empty-state">まだ記録がありません。<br>TODAYタブから始めましょう。</div>'; return; }
+  const exMap={none:'運動なし',aikido:'合気道',walk:'早歩き',strength:'筋トレ',other:'その他'};
+  const alMap={none:'飲酒なし',ok:'適量',warn:'多め',over:'飲みすぎ⚠️'};
+  el.innerHTML=[...records].reverse().map(r=> {
+    const exDisplay = r.exerciseLabel || exMap[r.exercise] || r.exercise;
+    return `<div class="log-item">
+      <div class="log-date">${r.date.replace(/\//g,'\n')}</div>
+      <div class="log-weight">${r.weight.toFixed(1)}</div>
+      <div class="log-details">${exDisplay} ／ ${alMap[r.alcohol]||r.alcohol}
+        ${r.meals?.length?'<br>'+r.meals.map(m=>m.name).join('・').slice(0,24):''}
+      </div>
+      ${r.kcal>0?`<div class="log-kcal">${r.kcal.toLocaleString()}<br>kcal</div>`:''}
+      ${r.trip?'<span class="log-trip">出張</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ---- INIT ----
+updateAlarmUI();
+if (alarmOn) scheduleAlarm();
+loadDraft();
+
+if (records.length > 0) {
+  const last = records[records.length-1];
+  updateProgress(last.weight);
+  const today = new Date().toLocaleDateString('ja-JP');
+  if (last.date === today) {
+    document.getElementById('weightInput').value = last.weight;
+    updateWeightDisplay(last.weight);
+    // If no draft loaded yet, restore from record
+    if (!localStorage.getItem('bodylog_draft')) {
+      mealSlots = last.mealSlots || { breakfast:[], lunch:[], dinner:[], other:[] };
+      updateCalDisplay();
+    }
+  }
+}
+</script>
+</body>
+</html>
